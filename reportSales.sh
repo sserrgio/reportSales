@@ -1,12 +1,13 @@
 #!/bin/bash
-#Llamada al script ./reporte.sh ip clavedb campaign
+#Llamada al script ./reporte.sh ip clavedb campaign mails statusSales statusContacts interval
 
 host=$1
 pw=$2
 campaign=$3
-#statusSales=$4
-#statusContacts=$5
-interval=$4
+mails=$4
+statusSales=$5
+statusContacts=$6
+interval=$7
 
 echo "#######################################################";
 echo "############# Report Sales by Campaign ################";
@@ -24,7 +25,7 @@ fechaF=`date +%Y-%m-%d`
 #por ahora solo aplicaria a OD
 
 sql1_func(){
-	if [ -z $intervalo ]; then
+	if [ -z $interval ]; then
 		sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= '$fechaI' 
 			and entry_date < '$fechaF';"
 	else
@@ -35,11 +36,13 @@ sql1_func(){
 	}
 sql2_func(){
 	sql2="select count(*) from vicidial_list where list_id='$list' 
-		and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( 'SDFP','SDPD','SDPP','SPFP','SPPD','SPPP' );"	
+		and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( $statusSales );"	
+		#and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( 'SDFP','SDPD','SDPP','SPFP','SPPD','SPPP' );"	
 	}
 sql3_func(){
 	sql3="select count(*) from vicidial_list where list_id='$list' and ( modify_date >= '$fechaI%' and modify_date < '$fechaF' 
-		and status in ( 'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR' ));"	
+		and status in ( $statusContacts ));"	
+		#and status in ( 'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR' ));"	
 	}
 
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
@@ -56,40 +59,42 @@ leads_sales=0
 leads_contacts=0
 
 #if [ ${#lists[@]} -gt 1 ]; then
-	for i in ${lists[@]}
-       	do
-		echo "lista $i"
-		list=$i
-		sql1_func
-		sql2_func
-		sql3_func
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
+for i in ${lists[@]}; do
+	echo "lista $i"
+	list=$i
+	
+	sql1_func
+	sql2_func
+	sql3_func
+	
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
 		
-		day=`cat /tmp/leads_day.log | sed -n '2 p'`
-		sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
-		contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+	day=`cat /tmp/leads_day.log | sed -n '2 p'`
+	sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
+	contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
 
-		let leads_day=$leads_day+$day
-		let leads_sales=$leads_sales+$sales
-		let leads_contacts=$leads_contacts+$contacts
-	done
+	let leads_day=$leads_day+$day
+	let leads_sales=$leads_sales+$sales
+	let leads_contacts=$leads_contacts+$contacts
+done
 
 <<'multi'
 else
-		list=${lists[1]}
-		echo "lista $list"
-		sql1_func
-		sql2_func
-		sql3_func
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
-		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
+	list=${lists[1]}
+	echo "lista $list"
+	sql1_func
+	sql2_func
+	sql3_func
+	
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
 
-		leads_day=`cat /tmp/leads_day.log | sed -n '2 p'`
-		leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
-		leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+	leads_day=`cat /tmp/leads_day.log | sed -n '2 p'`
+	leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
+	leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
 fi
 multi
 
@@ -104,16 +109,18 @@ else
 	contacts_vs_sales="No se agregaron leads"
 fi
 
-echo "Proyect: $campaign_name"
-echo "Report Date: $fechaI -- $fechaF"
-echo "Leads received = $leads_day"
-echo "Sales = $leads_sales"
-echo "Contacts $fechaI = $leads_contacts"
-echo "Leads vs Sales(%) = $leads_vs_sales"
-echo "Contacts vs Sales(%) = $contacts_vs_sales"
+salida="Proyect: $campaign_name\nReport Date: $fechaI -- $fechaF\nLeads received = $leads_day\nSales = $leads_sales\nContacts $fechaI = $leads_contacts\nLeads vs Sales(%) = $leads_vs_sales\nContacts vs Sales(%) = $contacts_vs_sales"
+echo -e $salida > /tmp/Report_Sales_$campaign_name.txt
+enscript -M A4 --margins=1:1:1:1 -f Courier7 /tmp/Report_Sales_$campaign_name.txt -p /tmp/Report_Sales_$campaign_name.ps
+ps2pdf /tmp/Report_Sales_$campaign_name.ps /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
+
+echo "This is an automatic report, please don't reply this email." | mutt "$mails" -F "/var/opt/cron/vicibox/muttreporting" -s "Report Sales $campaign_name - $fechaI -- $fechaF" -a "/tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf"
 
 echo "borrando temporales..."
 rm /tmp/leads_day.log
 rm /tmp/leads_sales.log
 rm /tmp/leads_contacts.log
 rm /tmp/campaign_name.log
+rm /tmp/Report_Sales_$campaign_name.txt
+rm /tmp/Report_Sales_$campaign_name.ps
+rm /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
