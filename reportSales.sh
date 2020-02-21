@@ -19,6 +19,8 @@ echo "Host: $host";
 fechaI=`date -d yesterday +%Y-%m-%d`
 fechaF=`date +%Y-%m-%d`
 
+#necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
+#por ahora solo aplicaria a onlinedivorce
 sql1_func(){
 	sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval 5 hour) and 
 		entry_date < date_add('$fechaF',interval 5 hour);"
@@ -90,11 +92,12 @@ else
 	contacts_vs_sales="No se agregaron leads"
 fi
 
-echo "Cantidad de leads ingresados el dia $fechaI = $leads_day"
-echo "Cantidad de Venta en el dia $fechaI = $leads_sales"
-echo "Cantidad de Contactos en el dia $fechaI = $leads_contacts"
-echo "Leads ingresados por dia VS Sales = $leads_vs_sales"
-echo "Leads Contacts VS Sales = $contacts_vs_sales"
+echo "Report Date: $fechaI -- $fechaF"
+echo "Leads received = $leads_day"
+echo "Sales = $leads_sales"
+echo "Contacts $fechaI = $leads_contacts"
+echo "Leads vs Sales(%) = $leads_vs_sales"
+echo "Contacts vs Sales(%) = $contacts_vs_sales"
 
 echo "borrando temporales..."
 rm /tmp/leads_day.log
