@@ -6,7 +6,7 @@ pw=$2
 campaign=$3
 #statusSales=$4
 #statusContacts=$5
-intervalo=$4
+interval=$4
 
 echo "#######################################################";
 echo "############# Report Sales by Campaign ################";
@@ -29,8 +29,8 @@ sql1_func(){
 			and entry_date < '$fechaF';"
 	else
 
-		sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval $intervalo hour) and 
-			entry_date < date_add('$fechaF',interval $intervalo hour);"
+		sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval $interval hour) and 
+			entry_date < date_add('$fechaF',interval $interval hour);"
 	fi
 	}
 sql2_func(){
@@ -43,6 +43,7 @@ sql3_func(){
 	}
 
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
+sql5="select campaign_name from vicidial_campaigns where campaign_id='$campaign';"
 
 campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql4" ) 
 #IFS="\n" read -a list <<< $campaign_lists
@@ -92,6 +93,9 @@ else
 fi
 multi
 
+mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql5" > /tmp/campaign_name.log
+campaign_name=`cat /tmp/campaign_name.log | sed -n '2 p'`
+
 if [ $leads_day -gt 0 ]; then 	
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
 	contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc )
@@ -100,6 +104,7 @@ else
 	contacts_vs_sales="No se agregaron leads"
 fi
 
+echo "Proyect: $campaign_name"
 echo "Report Date: $fechaI -- $fechaF"
 echo "Leads received = $leads_day"
 echo "Sales = $leads_sales"
@@ -111,3 +116,4 @@ echo "borrando temporales..."
 rm /tmp/leads_day.log
 rm /tmp/leads_sales.log
 rm /tmp/leads_contacts.log
+rm /tmp/campaign_name.log
