@@ -1,11 +1,18 @@
 #!/bin/bash
-#Llamada al script ./reporte.sh ip usuario userdb clavedb basededatos campaign
+#Llamada al script ./reporte.sh ip clavedb campaign
 
 host=$1
-user=$2
-pw=$3
-db=$4
-campaign=$5
+pw=$2
+campaign=$3
+
+echo "#######################################################";
+echo "############# Report Sales by Campaign ################";
+echo "############# Creado por Mauro Gonzalez ###############";
+echo "############ Fecha Creacion: 20/02/2020 ###############";
+echo "#### https://github.com/mauro25987/reportSales.git ####";
+echo "#######################################################";
+echo "Campaign: $campaign";
+echo "Host: $host";
 
 fechaI=`date -d yesterday +%Y-%m-%d`
 fechaF=`date +%Y-%m-%d`
@@ -26,11 +33,15 @@ sql3_func(){
 
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
 
-campaign_lists=$( mysql --host=$host -u $user -p$pw -D$db -e "$sql4" ) 
+campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql4" ) 
 #IFS="\n" read -a list <<< $campaign_lists
 
 for i in "${campaign_lists[@]}"; do lists+=($i); done
 unset lists[0] 
+
+leads_day=1
+leads_sales=2
+leads_contacts=10
 
 if [ ${#lists[@]} -gt 1 ]; then
 	for i in ${lists[@]}
@@ -39,26 +50,17 @@ if [ ${#lists[@]} -gt 1 ]; then
 		sql1_func
 		sql2_func
 		sql3_func
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql1" > /tmp/leads_day.log
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql2" > /tmp/leads_sales.log
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql3" > /tmp/leads_contacts.log
-
-		leads_day=`cat /tmp/leads_day.log | sed -n '2 p'`
-		leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
-		leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
 		
-		if [ $leads_day -gt 0 ]; then 	
-			leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
-			contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc )
-		else
-			leads_vs_sales="No se agrearon leads"
-			contacts_vs_sales="No se agregaron leads"
-		fi
-		echo "Cantidad de leads ingresados el dia $fechaI = $leads_day"
-		echo "Cantidad de Venta en el dia $fechaI = $leads_sales"
-		echo "Cantidad de Contactos en el dia $fechaI = $leads_contacts"
-		echo "Leads ingresados por dia VS Sales = $leads_vs_sales"
-		echo "Leads Contacts VS Sales = $contacts_vs_sales"
+		day=`cat /tmp/leads_day.log | sed -n '2 p'`
+		sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
+		contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+
+		let leads_day=$leads_day+$day
+		let leads_sales=$leads_sales+$sales
+		let leads_contacts=$leads_contacts+$contacts
 	done
 else
 		list=${lists[1]}
@@ -66,29 +68,30 @@ else
 		sql1_func
 		sql2_func
 		sql3_func
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql1" > /tmp/leads_day.log
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql2" > /tmp/leads_sales.log
-		mysql --host=$host -u $user -p$pw -D$db -e "$sql3" > /tmp/leads_contacts.log
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+		mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
 
 		leads_day=`cat /tmp/leads_day.log | sed -n '2 p'`
 		leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
 		leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
-		
-		if [ $leads_day -gt 0 ]; then 	
-			leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
-			contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc )
-		else
-			leads_vs_sales="No se agrearon leads"
-			contacts_vs_sales="No se agregaron leads"
-		fi
-		echo "Cantidad de leads ingresados el dia $fechaI = $leads_day"
-		echo "Cantidad de Venta en el dia $fechaI = $leads_sales"
-		echo "Cantidad de Contactos en el dia $fechaI = $leads_contacts"
-		echo "Leads ingresados por dia VS Sales = $leads_vs_sales"
-		echo "Leads Contacts VS Sales = $contacts_vs_sales"
 fi
 
+if [ $leads_day -gt 0 ]; then 	
+	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
+	contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc )
+else
+	leads_vs_sales="No se agrearon leads"
+	contacts_vs_sales="No se agregaron leads"
+fi
+echo "Cantidad de leads ingresados el dia $fechaI = $leads_day"
+echo "Cantidad de Venta en el dia $fechaI = $leads_sales"
+echo "Cantidad de Contactos en el dia $fechaI = $leads_contacts"
+echo "Leads ingresados por dia VS Sales = $leads_vs_sales"
+echo "Leads Contacts VS Sales = $contacts_vs_sales"
+
 echo "borrando temporales..."
+
 rm /tmp/leads_day.log
 rm /tmp/leads_sales.log
 rm /tmp/leads_contacts.log
