@@ -4,6 +4,8 @@
 host=$1
 pw=$2
 campaign=$3
+statusSales=$4
+statusContacts=$5
 
 echo "#######################################################";
 echo "############# Report Sales by Campaign ################";
@@ -39,14 +41,15 @@ campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sq
 for i in "${campaign_lists[@]}"; do lists+=($i); done
 unset lists[0] 
 
-leads_day=1
-leads_sales=2
-leads_contacts=10
+leads_day=0
+leads_sales=0
+leads_contacts=0
 
 if [ ${#lists[@]} -gt 1 ]; then
 	for i in ${lists[@]}
        	do
 		echo "lista $i"
+		list=$i
 		sql1_func
 		sql2_func
 		sql3_func
