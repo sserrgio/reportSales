@@ -92,7 +92,7 @@ else
 	contacts_vs_sales="No se agregaron leads"
 fi
 
-echo "report date: $fechaI -- $fechaF"
+echo "Report Date: $fechaI -- $fechaF"
 echo "Leads received = $leads_day"
 echo "Sales = $leads_sales"
 echo "Contacts $fechaI = $leads_contacts"
