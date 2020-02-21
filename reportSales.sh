@@ -25,12 +25,11 @@ sql1_func(){
 	}
 sql2_func(){
 	sql2="select count(*) from vicidial_list where list_id='$list' 
-		and modify_date >= '$fechaI' and modify_date < '$fechaF' and ( status='SDFP' or status='SDPD' or status='SDPP' or status='SPFP' 
-		or status='SPPD' or status='SPPP' );"	
+		and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( 'SDFP','SDPD','SDPP','SPFP','SPPD','SPPP' );"	
 	}
 sql3_func(){
 	sql3="select count(*) from vicidial_list where list_id='$list' and ( modify_date >= '$fechaI%' and modify_date < '$fechaF' 
-		and status IN ( 'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR' ));"	
+		and status in ( 'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR' ));"	
 	}
 
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
@@ -45,7 +44,7 @@ leads_day=0
 leads_sales=0
 leads_contacts=0
 
-if [ ${#lists[@]} -gt 1 ]; then
+#if [ ${#lists[@]} -gt 1 ]; then
 	for i in ${lists[@]}
        	do
 		echo "lista $i"
@@ -65,6 +64,8 @@ if [ ${#lists[@]} -gt 1 ]; then
 		let leads_sales=$leads_sales+$sales
 		let leads_contacts=$leads_contacts+$contacts
 	done
+
+<<'multi'
 else
 		list=${lists[1]}
 		echo "lista $list"
@@ -79,6 +80,7 @@ else
 		leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
 		leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
 fi
+multi
 
 if [ $leads_day -gt 0 ]; then 	
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
@@ -87,6 +89,7 @@ else
 	leads_vs_sales="No se agrearon leads"
 	contacts_vs_sales="No se agregaron leads"
 fi
+
 echo "Cantidad de leads ingresados el dia $fechaI = $leads_day"
 echo "Cantidad de Venta en el dia $fechaI = $leads_sales"
 echo "Cantidad de Contactos en el dia $fechaI = $leads_contacts"
@@ -94,7 +97,6 @@ echo "Leads ingresados por dia VS Sales = $leads_vs_sales"
 echo "Leads Contacts VS Sales = $contacts_vs_sales"
 
 echo "borrando temporales..."
-
 rm /tmp/leads_day.log
 rm /tmp/leads_sales.log
 rm /tmp/leads_contacts.log
