@@ -19,6 +19,8 @@ echo "Host: $host";
 fechaI=`date -d yesterday +%Y-%m-%d`
 fechaF=`date +%Y-%m-%d`
 
+#necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
+#por ahora solo aplicaria a onlinedivorce
 sql1_func(){
 	sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval 5 hour) and 
 		entry_date < date_add('$fechaF',interval 5 hour);"
