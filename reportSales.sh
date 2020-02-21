@@ -4,8 +4,9 @@
 host=$1
 pw=$2
 campaign=$3
-statusSales=$4
-statusContacts=$5
+#statusSales=$4
+#statusContacts=$5
+intervalo=$4
 
 echo "#######################################################";
 echo "############# Report Sales by Campaign ################";
@@ -20,10 +21,17 @@ fechaI=`date -d yesterday +%Y-%m-%d`
 fechaF=`date +%Y-%m-%d`
 
 #necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
-#por ahora solo aplicaria a onlinedivorce
+#por ahora solo aplicaria a OD
+
 sql1_func(){
-	sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval 5 hour) and 
-		entry_date < date_add('$fechaF',interval 5 hour);"
+	if [ -z $intervalo ]; then
+		sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= '$fechaI' 
+			and entry_date < '$fechaF';"
+	else
+
+		sql1="select count(*) from vicidial_list where list_id='$list' and entry_date >= date_add('$fechaI',interval $intervalo hour) and 
+			entry_date < date_add('$fechaF',interval $intervalo hour);"
+	fi
 	}
 sql2_func(){
 	sql2="select count(*) from vicidial_list where list_id='$list' 
