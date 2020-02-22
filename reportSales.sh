@@ -1,5 +1,5 @@
 #!/bin/bash
-#Llamada al script ./reporte.sh ip clavedb campaign mails statusSales statusContacts interval
+#Llamada al script ./reporte.sh ip clavedb campaign mails statusSales statusContacts name fechaI fechaF interval
 
 host=$1
 pw=$2
@@ -7,7 +7,10 @@ campaign=$3
 mails=$4
 statusSales=$5
 statusContacts=$6
-interval=$7
+name=$7
+fechaI=$8
+fechaF=$9
+interval=${10}
 
 echo "#######################################################";
 echo "############# Report Sales by Campaign ################";
@@ -17,9 +20,6 @@ echo "#### https://github.com/mauro25987/reportSales.git ####";
 echo "#######################################################";
 echo "Campaign: $campaign";
 echo "Host: $host";
-
-fechaI=`date -d yesterday +%Y-%m-%d`
-fechaF=`date +%Y-%m-%d`
 
 #necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
 #por ahora solo aplicaria a OD
@@ -101,26 +101,37 @@ multi
 mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql5" > /tmp/campaign_name.log
 campaign_name=`cat /tmp/campaign_name.log | sed -n '2 p'`
 
-if [ $leads_day -gt 0 ]; then 	
-	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc )
-	contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc )
+if [ $leads_sales -gt 0 ]; then
+	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc | sed 's/^\./0./' )
+	contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc | sed 's/^\./0./' )
 else
-	leads_vs_sales="No se agrearon leads"
-	contacts_vs_sales="No se agregaron leads"
+	leads_vs_sales="Not sales today"
+	contacts_vs_sales="Not sales today"
 fi
 
-salida="Proyect: $campaign_name\nReport Date: $fechaI -- $fechaF\nLeads received = $leads_day\nSales = $leads_sales\nContacts $fechaI = $leads_contacts\nLeads vs Sales(%) = $leads_vs_sales\nContacts vs Sales(%) = $contacts_vs_sales"
-echo -e $salida > /tmp/Report_Sales_$campaign_name.txt
-enscript -M A4 --margins=1:1:1:1 -f Courier7 /tmp/Report_Sales_$campaign_name.txt -p /tmp/Report_Sales_$campaign_name.ps
-ps2pdf /tmp/Report_Sales_$campaign_name.ps /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
+echo "<html><body>
+<img src="https://i.imgur.com/RwcasoT.png" alt="logo TN"><br/>
+<b>Proyect:</b> $campaign_name<br/>
+<b>Report Date:</b> $fechaI -- $fechaF<br/>
+<b>Leads received =</b> $leads_day<br/>
+<b>Sales =</b> $leads_sales<br/>
+<b>Contacts</b> $fechaI = $leads_contacts<br/>
+<b>Leads vs Sales(%) =</b> $leads_vs_sales<br/>
+<b>Contacts vs Sales(%) =</b> $contacts_vs_sales<br/><br/><br/>
+This is an automatic report, please don't reply this email.
+</body></html>" > /tmp/$name.html  
 
-echo "This is an automatic report, please don't reply this email." | mutt "$mails" -F "/var/opt/cron/vicibox/muttreporting" -s "Report Sales $campaign_name - $fechaI -- $fechaF" -a "/tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf"
+mutt -e "set content_type=text/html" "$mails" -F "/var/opt/cron/vicibox/muttreporting" -s "$name $fechaI" < /tmp/$name.html
 
 echo "borrando temporales..."
 rm /tmp/leads_day.log
 rm /tmp/leads_sales.log
 rm /tmp/leads_contacts.log
 rm /tmp/campaign_name.log
-rm /tmp/Report_Sales_$campaign_name.txt
-rm /tmp/Report_Sales_$campaign_name.ps
-rm /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
+rm /tmp/$name.html
+
+#enscript -M A4 --margins=1:1:1:1 -f Courier14 /tmp/Report_Sales_$campaign_name.txt -p /tmp/Report_Sales_$campaign_name.ps
+#ps2pdf /tmp/Report_Sales_$campaign_name.ps /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
+#mail --append="Content-type: text/html" -s "Report Sales $campaign_name $fechaI -- $fechaF" $mails < /tmp/Report_Sales_$campaign_name.txt
+#rm /tmp/Report_Sales_$campaign_name.ps
+#rm /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
