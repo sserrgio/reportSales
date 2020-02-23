@@ -12,14 +12,14 @@ fechaI=$8
 fechaF=$9
 interval=${10}
 
-echo "#######################################################";
-echo "############# Report Sales by Campaign ################";
-echo "############# Creado por Mauro Gonzalez ###############";
-echo "############ Fecha Creacion: 20/02/2020 ###############";
-echo "#### https://github.com/mauro25987/reportSales.git ####";
-echo "#######################################################";
-echo "Campaign: $campaign";
-echo "Host: $host";
+echo "#######################################################"
+echo "############# Report Sales by Campaign ################"
+echo "############# Creado por Mauro Gonzalez ###############"
+echo "############ Fecha Creacion: 20/02/2020 ###############"
+echo "#### https://github.com/mauro25987/reportSales.git ####"
+echo "#######################################################"
+echo "Campaign: $campaign"
+echo "Host: $host"
 
 #necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
 #por ahora solo aplicaria a OD
@@ -101,12 +101,16 @@ multi
 mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql5" > /tmp/campaign_name.log
 campaign_name=`cat /tmp/campaign_name.log | sed -n '2 p'`
 
-if [ $leads_sales -gt 0 ]; then
+if [ $leads_day -gt 0 ]; then
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc | sed 's/^\./0./' )
+else
+	leads_vs_sales="Not leads today"
+fi
+
+if [ $leads_contacts -gt 0 ]; then
 	contacts_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_contacts" | bc | sed 's/^\./0./' )
 else
-	leads_vs_sales="Not sales today"
-	contacts_vs_sales="Not sales today"
+	contacts_vs_sales="Not contacts today"
 fi
 
 echo "<html><body>
@@ -115,7 +119,7 @@ echo "<html><body>
 <b>Report Date:</b> $fechaI -- $fechaF<br/>
 <b>Leads received =</b> $leads_day<br/>
 <b>Sales =</b> $leads_sales<br/>
-<b>Contacts</b> $fechaI = $leads_contacts<br/>
+<b>Contacts $fechaI =</b> $leads_contacts<br/>
 <b>Leads vs Sales(%) =</b> $leads_vs_sales<br/>
 <b>Contacts vs Sales(%) =</b> $contacts_vs_sales<br/><br/><br/>
 This is an automatic report, please don't reply this email.
