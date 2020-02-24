@@ -15,9 +15,15 @@ parametros
 
 FECHAF=`date +%Y-%m-%d`
 FECHAI=`date +%Y-%m-%d -d "$FECHAF -1 day"`
+IP="192.168.70.13"
+PW="internalreports"
+NAME_OD="OnlineDivorce-report-Sales"
+CID_OD="ODIVORCE"
 MAIL_OD="mgonzalez@telecomnetworks.net"
-STATUS_OD_S="'SDFP','SDPD','SDPP','SPFP','SPPD','SPPP'"	
-STATUS_OD_C="'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR'"	
+STATUS_OD_S="'SU','SDFP','SDPD','SDPP','SPFP','SPPD','SPPP'"	
+STATUS_OD_C="'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR'"
+INTERVAL_OD="5"
 
-/bin/bash "/var/opt/cron/vicibox/reportSales.sh" "192.168.70.13" "internalreports" "ODIVORCE" "$MAIL_OD" "$STATUS_OD_S" "$STATUS_OD_C" "OnlineDivorce-report-Sales" "$FECHAI" "$FECHAF" "5"
-#/bin/bash "/home/mgonzalez/Documents/Telecom/git/reportSales/reportSales.sh" "192.168.70.13" "internalreports" "ODIVORCE" "$MAIL_OD" "$STATUS_OD_S" "$STATUS_OD_C" "OnlineDivorce-report-Sales" "$FECHAI" "$FECHAF" "5"
+/bin/bash "/var/opt/cron/vicibox/reportSales.sh" "$IP" "$PW" "$CID_OD" "$MAIL_OD" "$STATUS_OD_S" "$STATUS_OD_C" "$NAME_OD" "$FECHAI" "$FECHAF" "$INTERVAL_OD"
+#/bin/bash "/home/mgonzalez/Documents/Telecom/git/reportSales/reportSales.sh" "$IP" "$PW" "$CID_OD" "$MAIL_OD" "$STATUS_OD_S" "$STATUS_OD_C" "$NAME_OD" "$FECHAI" "$FECHAF" "$INTERVAL_OD"
+
