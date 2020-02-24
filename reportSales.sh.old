@@ -113,7 +113,7 @@ else
 	contacts_vs_sales="Not contacts today"
 fi
 
-echo "<html><body>
+echo "<html><head></head><body>
 <img src="https://i.imgur.com/RwcasoT.png" alt="logo TN"><br/>
 <b>Proyect:</b> $campaign_name<br/>
 <b>Report Date:</b> $fechaI -- $fechaF<br/>
