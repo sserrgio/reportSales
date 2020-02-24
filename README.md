@@ -1,7 +1,7 @@
 # Report Sales
 Reporte que muestra estadisticas de ventas con respecto a los leads o contactos ingresados por dia.
 
-##Parametros
+## Parametros
 1. IP / Host donde esta la basde de datos
 2. Password del usuario de la base de datos
 3. ID de la Campaña
@@ -15,9 +15,12 @@ Reporte que muestra estadisticas de ventas con respecto a los leads o contactos 
 Opcional
 10. Intervalo de horas en entry_date 
 
-##Modo de uso
+## Modo de uso
 1. Setear parametros en reportSalesDaily.sh
 Ejemplo:
+
 `/bin/bash "/home/mgonzalez/Documents/reportSales/reportSales.sh" "192.168.1.245" "asd123" "Sales" "$MAIL" "StatusS" "StatusC" "$NAME" "$FECHAI" "$FECHAF"`
+
 2. Ejecutar el script en el cron.
+
 `30	5	*	*	*	/bin/bash /path/reportSalesDaily.sh >> /dev/null`
