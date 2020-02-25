@@ -60,16 +60,16 @@ for i in ${lists[@]}; do
 	sql2_func
 	sql3_func
 	
-	day=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql1")
-	sales=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql2")
-	contacts=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql3")
+	day=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql1" )
+	sales=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql2" )
+	contacts=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql3" )
 
 	let leads_day=$leads_day+$day
 	let leads_sales=$leads_sales+$sales
 	let leads_contacts=$leads_contacts+$contacts
 done
 
-campaign_name=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql5")
+campaign_name=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql5" )
 
 if [ $leads_day -gt 0 ]; then
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc | sed 's/^\./0./' )
