@@ -24,5 +24,5 @@ STATUS_S="'SU','SDFP','SDPD','SDPP','SPFP','SPPD','SPPP'"
 STATUS_C="'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR'"
 INTERVAL="5"
 
-/bin/bash "/var/opt/cron/reportSales.sh" "$IP" "$PW" "$CID" "$MAIL" "$STATUS_S" "$STATUS_C" "$NAME" "$FECHAI" "$FECHAF" "$INTERVAL"
-#/bin/bash "/home/mgonzalez/Documents/Telecom/git/reportSales/reportSales.sh" "$IP" "$PW" "$CID" "$MAIL" "$STATUS_S" "$STATUS_C" "$NAME" "$FECHAI" "$FECHAF" "$INTERVAL"
+/bin/bash "/path/reportSales.sh" "$IP" "$PW" "$CID" "$MAIL" "$STATUS_S" "$STATUS_C" "$NAME" "$FECHAI" "$FECHAF" "$INTERVAL"
+#/bin/bash "/home/mgonzalez/Documents/reportSales/reportSales.sh" "$IP" "$PW" "$CID" "$MAIL" "$STATUS_S" "$STATUS_C" "$NAME" "$FECHAI" "$FECHAF" "$INTERVAL"
