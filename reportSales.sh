@@ -45,10 +45,8 @@ sql3_func(){
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
 sql5="select campaign_name from vicidial_campaigns where campaign_id='$campaign';"
 
-campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql4" ) 
-
+campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql4" ) 
 for i in "${campaign_lists[@]}"; do lists+=($i); done
-unset lists[0] 
 
 leads_day=0
 leads_sales=0
@@ -62,21 +60,16 @@ for i in ${lists[@]}; do
 	sql2_func
 	sql3_func
 	
-	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
-	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
-	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
-		
-	day=`cat /tmp/leads_day.log | sed -n '2 p'`
-	sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
-	contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+	day=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql1")
+	sales=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql2")
+	contacts=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql3")
 
 	let leads_day=$leads_day+$day
 	let leads_sales=$leads_sales+$sales
 	let leads_contacts=$leads_contacts+$contacts
 done
 
-mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql5" > /tmp/campaign_name.log
-campaign_name=`cat /tmp/campaign_name.log | sed -n '2 p'`
+campaign_name=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql5")
 
 if [ $leads_day -gt 0 ]; then
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc | sed 's/^\./0./' )
@@ -105,8 +98,4 @@ This is an automatic report, please don't reply this email.
 mutt -e "set content_type=text/html" "$mails" -F "/var/opt/cron/vicibox/muttreporting" -s "$name $fechaI" < /tmp/$name.html
 
 echo "borrando temporales..."
-rm /tmp/leads_day.log
-rm /tmp/leads_sales.log
-rm /tmp/leads_contacts.log
-rm /tmp/campaign_name.log
 rm /tmp/$name.html
