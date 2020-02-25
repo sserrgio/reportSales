@@ -1,4 +1,6 @@
 #!/bin/bash
+#Llamada al script ./reporte.sh ip clavedb campaign mails statusSales statusContacts name fechaI fechaF interval
+
 host=$1
 pw=$2
 campaign=$3
@@ -20,6 +22,7 @@ echo "Campaign: $campaign"
 echo "Host: $host"
 
 #necesitmaos ajustar la fecha de entry_date por que actualmente los leads que se ingresan por la api quedan con GMT-0 y el resto de los datos del server estan en GMT-5
+#por ahora solo aplicaria a OD
 
 sql1_func(){
 	if [ -z $interval ]; then
@@ -35,23 +38,30 @@ sql1_func(){
 sql2_func(){
 	sql2="select count(*) from vicidial_list where list_id='$list' 
 		and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( $statusSales );"	
+		#and modify_date >= '$fechaI' and modify_date < '$fechaF' and status in ( 'SDFP','SDPD','SDPP','SPFP','SPPD','SPPP' );"	
 	}
 
 sql3_func(){
 	sql3="select count(*) from vicidial_list where list_id='$list' and ( modify_date >= '$fechaI%' and modify_date < '$fechaF' 
 		and status in ( $statusContacts ));"	
+		#and status in ( 'AC','AD','CALLBK','DNC','HU','NI','SALE','WSUO','WN','INT','AR' ));"	
 	}
 
 sql4="select list_id from vicidial_lists where campaign_id='$campaign' and active='Y';"
 sql5="select campaign_name from vicidial_campaigns where campaign_id='$campaign';"
 
 campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql4" ) 
+#campaign_lists=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql4" ) 
+#IFS="\n" read -a list <<< $campaign_lists
+
 for i in "${campaign_lists[@]}"; do lists+=($i); done
+#unset lists[0] 
 
 leads_day=0
 leads_sales=0
 leads_contacts=0
 
+#if [ ${#lists[@]} -gt 1 ]; then
 for i in ${lists[@]}; do
 	echo "lista $i"
 	list=$i
@@ -60,16 +70,44 @@ for i in ${lists[@]}; do
 	sql2_func
 	sql3_func
 	
-	day=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql1" )
-	sales=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql2" )
-	contacts=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql3" )
+	day=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql1")
+	sales=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql2")
+	contacts=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql3")
+	
+	#mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+	#mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+	#mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
+		
+	#day=`cat /tmp/leads_day.log | sed -n '2 p'`
+	#sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
+	#contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
 
 	let leads_day=$leads_day+$day
 	let leads_sales=$leads_sales+$sales
 	let leads_contacts=$leads_contacts+$contacts
 done
 
-campaign_name=$( mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql5" )
+<<'multi'
+else
+	list=${lists[1]}
+	echo "lista $list"
+	sql1_func
+	sql2_func
+	sql3_func
+	
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql1" > /tmp/leads_day.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql2" > /tmp/leads_sales.log
+	mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql3" > /tmp/leads_contacts.log
+
+	leads_day=`cat /tmp/leads_day.log | sed -n '2 p'`
+	leads_sales=`cat /tmp/leads_sales.log | sed -n '2 p'`
+	leads_contacts=`cat /tmp/leads_contacts.log | sed -n '2 p'`
+fi
+multi
+
+campaign_name=$(mysql --host=$host -u internalreports -p$pw -Dasterisk -Ns -e "$sql5")
+#mysql --host=$host -u internalreports -p$pw -Dasterisk -e "$sql5" > /tmp/campaign_name.log
+#campaign_name=`cat /tmp/campaign_name.log | sed -n '2 p'`
 
 if [ $leads_day -gt 0 ]; then
 	leads_vs_sales=$( echo "scale=2; $leads_sales*100/$leads_day" | bc | sed 's/^\./0./' )
@@ -98,4 +136,14 @@ This is an automatic report, please don't reply this email.
 mutt -e "set content_type=text/html" "$mails" -F "/var/opt/cron/vicibox/muttreporting" -s "$name $fechaI" < /tmp/$name.html
 
 echo "borrando temporales..."
+#rm /tmp/leads_day.log
+#rm /tmp/leads_sales.log
+#rm /tmp/leads_contacts.log
+#rm /tmp/campaign_name.log
 rm /tmp/$name.html
+
+#enscript -M A4 --margins=1:1:1:1 -f Courier14 /tmp/Report_Sales_$campaign_name.txt -p /tmp/Report_Sales_$campaign_name.ps
+#ps2pdf /tmp/Report_Sales_$campaign_name.ps /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
+#mail --append="Content-type: text/html" -s "Report Sales $campaign_name $fechaI -- $fechaF" $mails < /tmp/Report_Sales_$campaign_name.txt
+#rm /tmp/Report_Sales_$campaign_name.ps
+#rm /tmp/Report_Sales_$campaign_name_$fechaI-$fechaF.pdf
